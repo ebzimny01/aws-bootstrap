@@ -6,9 +6,22 @@ $env:CLI_PROFILE='awsbootstrap'
 $env:EC2_INSTANCE_TYPE='t2.micro' 
 
 # S3 Bucket configuration for CodePipeline
-$env:AWS_ACCOUNT_ID='amazon/aws-cli sts get-caller-identity --profile awsbootstrap `
-  --query "Account" --output text'
-$env:CODEPIPELINE_BUCKET='$env:STACK_NAME-$env:REGION-codepipeline-$env:AWS_ACCOUNT_ID'
+$env:AWS_ACCOUNT_ID= docker run --rm -it -v $env:userprofile\.aws:/root/.aws sts get-caller-identity --profile awsbootstrap `
+  --query "Account" --output text
+$env:CODEPIPELINE_BUCKET=$env:STACK_NAME + '-' + $env:REGION + '-codepipeline-' + $env:AWS_ACCOUNT_ID
+
+# Deploys static resources
+Write-Output "`n`n=========== Deploying setup.yml ==========="
+docker run --rm -it -v $env:userprofile\.aws:/root/.aws `
+  -v $env:userprofile\code\aws-bootstrap:/root/aws-bootstrap amazon/aws-cli cloudformation deploy `
+  --region $env:REGION `
+  --profile $env:CLI_PROFILE `
+  --stack-name $env:STACK_NAME + '-setup' `
+  --template-file '/root/aws-bootstrap/setup.yml' `
+  --no-fail-on-empty-changeset `
+  --capabilities CAPABILITY_NAMED_IAM `
+  --parameter-overrides `
+    CodePipelineBucket=$env:CODEPIPELINE_BUCKET
 
 # Deploy the CloudFormation template
 Write-Output "`n`n=========== Deploying main.yml ==========="
