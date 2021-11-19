@@ -7,6 +7,7 @@ phases:
   pre_build:
     commands:
       # run 'npm install' using versions in package-lock.json
+      - npm install pm2@latest -g
       - npm ci
   build:
     commands:
